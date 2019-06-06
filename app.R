@@ -10,7 +10,7 @@ ui <- dashboardPage(
   ),
   dashboardSidebar(
     sidebarMenu(
-      fileInput("base", "Faça o upload da sua base. Nós não coletaremos os seus dados. O arquivo será deletado assim que a sessão for finalizada."),
+      fileInput("base", "Faça o upload da base do seu histórico da Netflix. Nós não coletaremos os seus dados. O arquivo será deletado assim que a sessão for finalizada."),
       tags$p(
         class = "cursor",
         tags$a(
@@ -52,7 +52,8 @@ server <- function(input, output, session) {
     df <- read_csv(input$base$datapath) %>%
       mutate(
         Date = lubridate::mdy(Date),
-        mes = lubridate::month(Date, label = TRUE, locale = "pt_BR.UTF-8"),
+        mes = lubridate::month(Date, label = TRUE),
+        mes = lvls_revalue(mes, c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez")),
         ano = lubridate::year(Date),
         mes_ano = Date,
         programa = str_remove(Title, ":.*")
@@ -72,11 +73,6 @@ server <- function(input, output, session) {
       ggplot(aes(x = mes_ano, y = n)) +
       geom_line() +
       geom_smooth(se = FALSE, color = "#e50914") +
-      geom_vline(
-        aes(xintercept = as.numeric(mes_ano[mes_ano == "2019/01/01"])), 
-        linetype = 2, 
-        color = "red"
-      ) +
       labs(x = "Ano", y = "Frequência") +
       ggtitle("Frequência ao longo do tempo")
     
@@ -84,8 +80,10 @@ server <- function(input, output, session) {
       count(mes, ano) %>% 
       group_by(mes) %>% 
       summarise(freq_media = mean(n)) %>% 
+      mutate(freq_media = round(freq_media)) %>% 
       ggplot(aes(x = mes, y = freq_media)) +
       geom_col(fill = "#e50914", color = "black") +
+      geom_text(aes(label = freq_media, y = freq_media/2), color = "white") +
       labs(x = "Mês", y = "Frequência média") +
       ggtitle("Frequência média por mês")
     
@@ -93,7 +91,8 @@ server <- function(input, output, session) {
       count(ano) %>% 
       ggplot(aes(x = ano, y = n)) +
       geom_col(fill = "#e50914", color = "black") +
-      labs(x = "Ano", y = "Frequência") +
+      geom_text(aes(label = n, y = n/2), color = "white") +
+      labs(x = "Ano", y = "Frequência total") +
       scale_x_continuous(breaks = min(netflix()$ano):max(netflix()$ano)) +
       ggtitle("Frequência por ano")
     
@@ -103,8 +102,9 @@ server <- function(input, output, session) {
       mutate(programa = fct_reorder(programa, n)) %>% 
       ggplot(aes(x = programa, y = n)) +
       geom_col(fill = "#e50914", color = "black") +
+      geom_text(aes(label = n, y = n/2), color = "white") +
       labs(x = "Série", y = "Número de vezes assistida(o)") +
-      theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+      coord_flip() +
       ggtitle("Top 10 séries/filmes")
     
     patchwork::wrap_plots(p1, p2, p3, p4, ncol = 2)

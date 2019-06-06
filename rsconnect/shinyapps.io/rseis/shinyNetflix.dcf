@@ -1,0 +1,12 @@
+name: shinyNetflix
+title: shinyNetflix
+username:
+account: rseis
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 969237
+bundleId: 2136439
+url: https://rseis.shinyapps.io/shinyNetflix/
+when: 1559854536.91058
+asMultiple: FALSE
+asStatic: FALSE
